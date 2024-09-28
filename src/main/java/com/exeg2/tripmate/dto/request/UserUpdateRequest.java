@@ -7,6 +7,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -23,4 +24,7 @@ public class UserUpdateRequest {
     Gender gender;
     String address;
     @Size(min = 10, max = 30, message = "PASSWORD_VALID")
-    String password;}
+    String password;
+
+    Set<String> roles;
+}

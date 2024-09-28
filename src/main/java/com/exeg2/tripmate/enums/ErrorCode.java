@@ -19,6 +19,8 @@ public enum ErrorCode {
     EMAIL_VALID(HttpStatus.BAD_REQUEST.value(), "Email must be in form example@gmail.com!", HttpStatus.BAD_REQUEST),
     INVALID_KEY(HttpStatus.BAD_REQUEST.value(), "Invalid enums key!", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "User not found!", HttpStatus.NOT_FOUND),
+    PERMISSION_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "Permission not found!", HttpStatus.NOT_FOUND),
+    ROLE_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "Role not found!", HttpStatus.NOT_FOUND),
     ;
     int code;
     String message;
