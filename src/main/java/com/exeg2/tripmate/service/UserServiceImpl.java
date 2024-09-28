@@ -7,12 +7,16 @@ import com.exeg2.tripmate.enums.ErrorCode;
 import com.exeg2.tripmate.exception.AppException;
 import com.exeg2.tripmate.mapper.UserMapper;
 import com.exeg2.tripmate.model.User;
+import com.exeg2.tripmate.repository.RoleRepository;
 import com.exeg2.tripmate.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -22,6 +26,7 @@ public class UserServiceImpl implements UserService {
 
     UserRepository userRepository;
     UserMapper userMapper;
+    private final RoleRepository roleRepository;
 
     @Override
     public UserResponse createUser(UserCreateRequest userCreateRequest) {
@@ -31,6 +36,8 @@ public class UserServiceImpl implements UserService {
 
         User user = userMapper.toUser(userCreateRequest);
         user.setEnabled(true);
+        var role = roleRepository.findById("USER").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+        user.setRoles(Collections.singleton(role));
         return userMapper.toUserResponse(userRepository.save(user));
     }
 
@@ -49,6 +56,8 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         userMapper.updateUser(user, request);
+        var roles = roleRepository.findAllById(request.getRoles());
+        user.setRoles(new HashSet<>(roles));
 
         return userMapper.toUserResponse(userRepository.save(user));
     }
