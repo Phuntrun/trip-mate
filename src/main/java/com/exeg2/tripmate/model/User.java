@@ -29,7 +29,7 @@ public class User {
 
     String username;
     String password;
-    boolean enabled;
+    boolean enable;
 
     @ManyToMany
     Set<Role> roles;
