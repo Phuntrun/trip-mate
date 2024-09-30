@@ -21,6 +21,8 @@ public enum ErrorCode {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "User not found!", HttpStatus.NOT_FOUND),
     PERMISSION_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "Permission not found!", HttpStatus.NOT_FOUND),
     ROLE_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "Role not found!", HttpStatus.NOT_FOUND),
+    UNAUTHENTICATED(HttpStatus.UNAUTHORIZED.value(), "Unauthenticated!", HttpStatus.UNAUTHORIZED),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED.value(), "Unauthorized!", HttpStatus.UNAUTHORIZED),
     ;
     int code;
     String message;
