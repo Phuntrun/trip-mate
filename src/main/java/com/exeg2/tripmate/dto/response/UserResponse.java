@@ -23,7 +23,7 @@ public class UserResponse {
     Gender gender;
     String address;
     String username;
-    boolean enable;
+    boolean enabled;
 
     Set<RoleResponse> roles;
 }
