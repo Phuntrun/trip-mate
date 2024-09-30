@@ -12,9 +12,9 @@ import com.exeg2.tripmate.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -26,19 +26,18 @@ public class UserServiceImpl implements UserService {
 
     UserRepository userRepository;
     UserMapper userMapper;
-    RoleRepository roleRepository;
+    private final RoleRepository roleRepository;
 
     @Override
-    public UserResponse createUser(UserCreateRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) throw new AppException(ErrorCode.USERNAME_USED);
-        if (userRepository.existsByEmail(request.getEmail())) throw new AppException(ErrorCode.EMAIL_USED);
-        if (userRepository.existsByPhone(request.getPhone())) throw new AppException(ErrorCode.PHONE_USED);
+    public UserResponse createUser(UserCreateRequest userCreateRequest) {
+        if (userRepository.existsByUsername(userCreateRequest.getUsername())) throw new AppException(ErrorCode.USERNAME_USED);
+        if (userRepository.existsByEmail(userCreateRequest.getEmail())) throw new AppException(ErrorCode.EMAIL_USED);
+        if (userRepository.existsByPhone(userCreateRequest.getPhone())) throw new AppException(ErrorCode.PHONE_USED);
 
-        User user = userMapper.toUser(request);
-        user.setEnable(true);
+        User user = userMapper.toUser(userCreateRequest);
+        user.setEnabled(true);
         var role = roleRepository.findById("USER").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         user.setRoles(Collections.singleton(role));
-        user.setPassword(new BCryptPasswordEncoder().encode(request.getPassword()));
         return userMapper.toUserResponse(userRepository.save(user));
     }
 
@@ -59,7 +58,6 @@ public class UserServiceImpl implements UserService {
         userMapper.updateUser(user, request);
         var roles = roleRepository.findAllById(request.getRoles());
         user.setRoles(new HashSet<>(roles));
-        user.setPassword(new BCryptPasswordEncoder().encode(request.getPassword()));
 
         return userMapper.toUserResponse(userRepository.save(user));
     }

@@ -25,7 +25,6 @@ public class UserUpdateRequest {
     String address;
     @Size(min = 10, max = 30, message = "PASSWORD_VALID")
     String password;
-    boolean enable;
 
     Set<String> roles;
 }

@@ -17,6 +17,6 @@ public class Role {
     String name;
     String description;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany
     Set<Permission> permissions;
 }
