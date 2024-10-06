@@ -12,6 +12,8 @@ import com.exeg2.tripmate.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -48,6 +50,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> findAllUsers() {
         return userRepository.findAll().stream().map(userMapper::toUserResponse).toList();
     }
@@ -68,5 +71,12 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(String id) {
         if (!userRepository.existsById(id)) throw new AppException(ErrorCode.USER_NOT_FOUND);
         userRepository.deleteById(id);
+    }
+
+    @Override
+    public UserResponse myinfo() {
+        var context = SecurityContextHolder.getContext();
+        String username = context.getAuthentication().getName();
+        return userMapper.toUserResponse(userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
     }
 }

@@ -39,6 +39,19 @@ public class ApplicationInitConfig {
                 userRepository.save(user);
                 log.warn("admin user has been created with default password: admin. please change it!");
             }
+
+            if (userRepository.findByUsername("user").isEmpty()) {
+                var roles = roleRepository.findById("USER").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+                User user = User.builder()
+                        .username("user")
+                        .password(new BCryptPasswordEncoder().encode("user"))
+                        .roles(Collections.singleton(roles))
+                        .enable(true)
+                        .build();
+
+                userRepository.save(user);
+                log.warn("user user has been created with default password: admin. please change it!");
+            }
         };
     }
 }
