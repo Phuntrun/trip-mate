@@ -12,6 +12,7 @@ import com.exeg2.tripmate.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -32,19 +33,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse createUser(UserCreateRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) throw new AppException(ErrorCode.USERNAME_USED);
-        if (userRepository.existsByEmail(request.getEmail())) throw new AppException(ErrorCode.EMAIL_USED);
-        if (userRepository.existsByPhone(request.getPhone())) throw new AppException(ErrorCode.PHONE_USED);
-
         User user = userMapper.toUser(request);
         user.setEnable(true);
         var role = roleRepository.findById("USER").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         user.setRoles(Collections.singleton(role));
         user.setPassword(new BCryptPasswordEncoder().encode(request.getPassword()));
-        return userMapper.toUserResponse(userRepository.save(user));
+        user = userRepository.save(user);
+        return userMapper.toUserResponse(user);
     }
 
     @Override
+    @PostAuthorize("returnObject.username == authentication.name")
     public UserResponse findUserById(String id) {
         return userMapper.toUserResponse(userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
     }
@@ -74,6 +73,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @PostAuthorize("returnObject.username == authentication.name")
     public UserResponse myinfo() {
         var context = SecurityContextHolder.getContext();
         String username = context.getAuthentication().getName();

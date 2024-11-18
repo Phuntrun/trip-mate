@@ -1,57 +1,63 @@
 package com.exeg2.tripmate.config;
 
-import com.exeg2.tripmate.enums.ErrorCode;
-import com.exeg2.tripmate.exception.AppException;
+import com.exeg2.tripmate.enums.PredefinedRole;
+import com.exeg2.tripmate.model.Role;
 import com.exeg2.tripmate.model.User;
 import com.exeg2.tripmate.repository.RoleRepository;
 import com.exeg2.tripmate.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import java.util.Collections;
+import java.util.HashSet;
 
 @Configuration
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class ApplicationInitConfig {
+    BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    RoleRepository roleRepository;
+    @NonFinal
+    static final String ADMIN_USER_NAME = "admin";
+
+    @NonFinal
+    static final String ADMIN_PASSWORD = "admin";
 
     @Bean
-    ApplicationRunner applicationRunner(UserRepository userRepository) {
+    ApplicationRunner applicationRunner(UserRepository userRepository, RoleRepository roleRepository) {
+        log.info("Initializing application.....");
         return args -> {
-            if (userRepository.findByUsername("admin").isEmpty()) {
-                var roles = roleRepository.findById("ADMIN").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+            if (userRepository.findByUsername(ADMIN_USER_NAME).isEmpty()) {
+                roleRepository.save(Role.builder()
+                        .name(PredefinedRole.USER_ROLE)
+                        .description("User role")
+                        .build());
+
+                Role adminRole = roleRepository.save(Role.builder()
+                        .name(PredefinedRole.ADMIN_ROLE)
+                        .description("Admin role")
+                        .build());
+
+                var roles = new HashSet<Role>();
+                roles.add(adminRole);
+
                 User user = User.builder()
-                        .username("admin")
-                        .password(new BCryptPasswordEncoder().encode("admin"))
-                        .roles(Collections.singleton(roles))
-                        .enable(true)
+                        .username(ADMIN_USER_NAME)
+                        .password(bCryptPasswordEncoder.encode(ADMIN_PASSWORD))
+                        .roles(roles)
                         .build();
 
                 userRepository.save(user);
-                log.warn("admin user has been created with default password: admin. please change it!");
+                log.warn("admin user has been created with default password: admin, please change it");
             }
-
-            if (userRepository.findByUsername("user").isEmpty()) {
-                var roles = roleRepository.findById("USER").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
-                User user = User.builder()
-                        .username("user")
-                        .password(new BCryptPasswordEncoder().encode("user"))
-                        .roles(Collections.singleton(roles))
-                        .enable(true)
-                        .build();
-
-                userRepository.save(user);
-                log.warn("user user has been created with default password: admin. please change it!");
-            }
+            log.info("Application initialization completed .....");
         };
     }
 }
