@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +30,7 @@ public class UserServiceImpl implements UserService {
 
     UserRepository userRepository;
     UserMapper userMapper;
-    RoleRepository roleRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     public UserResponse createUser(UserCreateRequest request) {
@@ -61,7 +62,6 @@ public class UserServiceImpl implements UserService {
         userMapper.updateUser(user, request);
         var roles = roleRepository.findAllById(request.getRoles());
         user.setRoles(new HashSet<>(roles));
-        user.setPassword(new BCryptPasswordEncoder().encode(request.getPassword()));
 
         return userMapper.toUserResponse(userRepository.save(user));
     }
