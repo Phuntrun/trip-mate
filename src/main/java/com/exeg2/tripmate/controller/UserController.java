@@ -5,6 +5,7 @@ import com.exeg2.tripmate.dto.request.UserUpdateRequest;
 import com.exeg2.tripmate.dto.response.ApiResponse;
 import com.exeg2.tripmate.dto.response.UserResponse;
 import com.exeg2.tripmate.service.UserService;
+import com.exeg2.tripmate.service.UserServiceImpl;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
     UserService userService;
+    private final UserServiceImpl userServiceImpl;
 
     @PostMapping
     public ResponseEntity<ApiResponse<UserResponse>> createUser(@RequestBody @Valid UserCreateRequest request) {
@@ -58,5 +60,12 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.builder()
                         .message("User deleted")
                         .build());
+    }
+
+    @GetMapping("/info")
+    public ResponseEntity<ApiResponse<UserResponse>> getMyUsers() {
+        ApiResponse<UserResponse> apiResponse = new ApiResponse<>();
+        apiResponse.setResult(userServiceImpl.myinfo());
+        return ResponseEntity.ok(apiResponse);
     }
 }

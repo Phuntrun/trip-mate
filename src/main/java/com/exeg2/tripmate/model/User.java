@@ -21,15 +21,17 @@ public class User {
 
     String firstname;
     String lastname;
+    @Column(name = "email", unique = true, columnDefinition = "VARCHAR(255) COLLATE utf8mb4_unicode_ci")
     String email;
+    @Column(name="phone", unique = true)
     String phone;
     LocalDate dob;
     Gender gender;
     String address;
-
+    @Column(name = "username", unique = true, nullable = false, columnDefinition = "VARCHAR(255) COLLATE utf8mb4_unicode_ci")
     String username;
     String password;
-    boolean enabled;
+    boolean enable;
 
     @ManyToMany
     Set<Role> roles;

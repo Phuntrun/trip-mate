@@ -12,6 +12,10 @@ import com.exeg2.tripmate.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -29,24 +33,24 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
 
     @Override
-    public UserResponse createUser(UserCreateRequest userCreateRequest) {
-        if (userRepository.existsByUsername(userCreateRequest.getUsername())) throw new AppException(ErrorCode.USERNAME_USED);
-        if (userRepository.existsByEmail(userCreateRequest.getEmail())) throw new AppException(ErrorCode.EMAIL_USED);
-        if (userRepository.existsByPhone(userCreateRequest.getPhone())) throw new AppException(ErrorCode.PHONE_USED);
-
-        User user = userMapper.toUser(userCreateRequest);
-        user.setEnabled(true);
+    public UserResponse createUser(UserCreateRequest request) {
+        User user = userMapper.toUser(request);
+        user.setEnable(true);
         var role = roleRepository.findById("USER").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         user.setRoles(Collections.singleton(role));
-        return userMapper.toUserResponse(userRepository.save(user));
+        user.setPassword(new BCryptPasswordEncoder().encode(request.getPassword()));
+        user = userRepository.save(user);
+        return userMapper.toUserResponse(user);
     }
 
     @Override
+    @PostAuthorize("returnObject.username == authentication.name")
     public UserResponse findUserById(String id) {
         return userMapper.toUserResponse(userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> findAllUsers() {
         return userRepository.findAll().stream().map(userMapper::toUserResponse).toList();
     }
@@ -66,5 +70,13 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(String id) {
         if (!userRepository.existsById(id)) throw new AppException(ErrorCode.USER_NOT_FOUND);
         userRepository.deleteById(id);
+    }
+
+    @Override
+    @PostAuthorize("returnObject.username == authentication.name")
+    public UserResponse myinfo() {
+        var context = SecurityContextHolder.getContext();
+        String username = context.getAuthentication().getName();
+        return userMapper.toUserResponse(userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
     }
 }
