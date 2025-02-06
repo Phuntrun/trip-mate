@@ -1,14 +1,10 @@
 package com.exeg2.tripmate.controller;
 
-import com.exeg2.tripmate.dto.request.AuthenticateRequest;
-import com.exeg2.tripmate.dto.request.IntrospectRequest;
-import com.exeg2.tripmate.dto.request.LogoutRequest;
-import com.exeg2.tripmate.dto.request.RefreshRequest;
-import com.exeg2.tripmate.dto.response.ApiResponse;
-import com.exeg2.tripmate.dto.response.AuthenticateResponse;
-import com.exeg2.tripmate.dto.response.IntrospectResponse;
+import com.exeg2.tripmate.dto.request.*;
+import com.exeg2.tripmate.dto.response.*;
 import com.exeg2.tripmate.service.AuthenticationService;
 import com.nimbusds.jose.JOSEException;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -47,6 +43,21 @@ public class AuthenticationController {
         var message = authenticationService.logout(request);
         return ApiResponse.<String>builder()
                 .message(message == null ? "You have been logout!" : message)
+                .build();
+    }
+
+    @PostMapping("/forgot")
+    public ApiResponse<SendEmailResponse> forgot(@RequestBody SendEmailRequest request) {
+        return ApiResponse.<SendEmailResponse>builder()
+                .result(authenticationService.isSentResetLink(request))
+                .build();
+    }
+
+    @PostMapping("/forgot/{token}")
+    public ApiResponse<ResetPasswordResponse> resetPassword(@RequestBody @Valid ResetPasswordRequest request, @PathVariable("token") String token) {
+        return ApiResponse.<ResetPasswordResponse>builder()
+                .result(authenticationService.resetPassword(request, token))
+                .message("Reset password completed")
                 .build();
     }
 }

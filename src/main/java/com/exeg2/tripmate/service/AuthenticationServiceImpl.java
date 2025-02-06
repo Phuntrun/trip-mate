@@ -1,16 +1,17 @@
 package com.exeg2.tripmate.service;
 
-import com.exeg2.tripmate.dto.request.AuthenticateRequest;
-import com.exeg2.tripmate.dto.request.IntrospectRequest;
-import com.exeg2.tripmate.dto.request.LogoutRequest;
-import com.exeg2.tripmate.dto.request.RefreshRequest;
+import com.exeg2.tripmate.dto.request.*;
 import com.exeg2.tripmate.dto.response.AuthenticateResponse;
 import com.exeg2.tripmate.dto.response.IntrospectResponse;
+import com.exeg2.tripmate.dto.response.ResetPasswordResponse;
+import com.exeg2.tripmate.dto.response.SendEmailResponse;
 import com.exeg2.tripmate.enums.ErrorCode;
 import com.exeg2.tripmate.exception.AppException;
 import com.exeg2.tripmate.model.InvalidToken;
+import com.exeg2.tripmate.model.ResetPasswordToken;
 import com.exeg2.tripmate.model.User;
 import com.exeg2.tripmate.repository.InvalidTokenRepository;
+import com.exeg2.tripmate.repository.ResetPasswordTokenRepository;
 import com.exeg2.tripmate.repository.UserRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
@@ -23,6 +24,8 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -41,10 +44,16 @@ import java.util.UUID;
 public class AuthenticationServiceImpl implements AuthenticationService {
     UserRepository userRepository;
     InvalidTokenRepository invalidTokenRepository;
+    ResetPasswordTokenRepository resetPasswordTokenRepository;
+    private final JavaMailSenderImpl mailSender;
 
     @NonFinal
     @Value("${spring.jwt.signkey}")
     protected String signKey;
+
+    @NonFinal
+    @Value("${spring.mail.username}")
+    protected String hostMail;
 
     @NonFinal
     @Value("${spring.jwt.valid-duration}")
@@ -113,6 +122,56 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .authenticated(true)
                 .token(generateToken(user))
                 .build();
+    }
+
+    public SendEmailResponse isSentResetLink(SendEmailRequest request) {
+
+        var user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        ResetPasswordToken token = ResetPasswordToken.builder()
+                .username(user.getUsername())
+                .token(UUID.randomUUID().toString())
+                .expiry(new Date(Instant.now()
+                        .plus(120, ChronoUnit.SECONDS)
+                        .toEpochMilli())).build();
+
+        resetPasswordTokenRepository.save(token);
+
+        sendMail(request.getEmail(), user.getUsername(), token.getToken());
+
+        return SendEmailResponse.builder()
+                .sent(true)
+                .message("Reset link is sent to your email " + request.getEmail()).build();
+
+    }
+
+    public ResetPasswordResponse resetPassword(ResetPasswordRequest request, String token) {
+        ResetPasswordToken resetPasswordToken = resetPasswordTokenRepository.findById(token).orElseThrow(() -> new AppException(ErrorCode.TOKEN_NOT_FOUND));
+
+        if (resetPasswordToken.getExpiry().before(new Date())) throw new AppException(ErrorCode.TOKEN_EXPIRED);
+
+        User user = userRepository.findByUsername(resetPasswordToken.getUsername()).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        user.setPassword(new BCryptPasswordEncoder().encode(request.getPassword()));
+
+        userRepository.save(user);
+
+        return ResetPasswordResponse.builder()
+                .success(true).build();
+    }
+
+    void sendMail(String email, String name, String token) {
+        SimpleMailMessage message = new SimpleMailMessage();
+
+        String content = "Dear Mr/Ms." +
+                name +
+                ",\n" +
+                "Click on that link to reset your password: http://localhost:8080/auth/forgot/" + token;
+
+        message.setFrom(hostMail);
+        message.setSubject("[TripMate's Client Care] Supports Password Recovery");
+        message.setText(content);
+        message.setTo(email);
+        mailSender.send(message);
     }
 
     SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
