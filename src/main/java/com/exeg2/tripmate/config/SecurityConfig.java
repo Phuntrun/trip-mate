@@ -24,6 +24,12 @@ public class SecurityConfig {
             "/users", "/auth/**"
     };
 
+    private static final String[] SWAGGER_ENPOINT = {
+            "/api/v1/auth/**", "/v3/api-docs/**",
+            "/v3/api-docs.yaml",
+            "/swagger-ui/**", "/swagger-ui.html",
+    };
+
     private final CustomJwtDecoder customJwtDecoder;
 
     public SecurityConfig(CustomJwtDecoder customJwtDecoder) {
@@ -32,10 +38,10 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(request -> request.requestMatchers(HttpMethod.POST, PUBLIC_ENPOINT)
-                .permitAll()
-                .anyRequest()
-                .authenticated());
+        http.authorizeHttpRequests(request -> request
+                .requestMatchers(HttpMethod.POST, PUBLIC_ENPOINT).permitAll()
+                .requestMatchers(SWAGGER_ENPOINT).permitAll()
+                .anyRequest().authenticated());
 
         http.oauth2ResourceServer(request -> request.jwt(jwtConfigurer -> jwtConfigurer
                         .decoder(customJwtDecoder)

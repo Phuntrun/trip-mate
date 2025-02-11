@@ -6,6 +6,8 @@ import com.exeg2.tripmate.dto.response.ApiResponse;
 import com.exeg2.tripmate.dto.response.UserResponse;
 import com.exeg2.tripmate.service.UserService;
 import com.exeg2.tripmate.service.UserServiceImpl;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +22,12 @@ import java.util.List;
 @RequestMapping("/users")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Tag(name="User Controller")
 public class UserController {
     UserService userService;
     private final UserServiceImpl userServiceImpl;
 
+    @Operation(summary = "Create user", description = "create new user")
     @PostMapping
     public ResponseEntity<ApiResponse<UserResponse>> createUser(@RequestBody @Valid UserCreateRequest request) {
         return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
@@ -33,6 +37,7 @@ public class UserController {
                 .build());
     }
 
+    @Operation(summary = "Get user", description = "find an user by id")
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> getUsers(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
@@ -40,6 +45,7 @@ public class UserController {
                 .build());
     }
 
+    @Operation(summary = "Get all users", description = "show all users")
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
         return ResponseEntity.ok(ApiResponse.<List<UserResponse>>builder()
@@ -47,6 +53,7 @@ public class UserController {
                 .build());
     }
 
+    @Operation(summary = "Update user", description = "update user by id")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(@PathVariable String id, @RequestBody @Valid UserUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
@@ -54,6 +61,7 @@ public class UserController {
                 .build());
     }
 
+    @Operation(summary = "Delete user", description = "delete user by id")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse> deleteUser(@PathVariable String id) {
         userService.deleteUser(id);
@@ -62,6 +70,7 @@ public class UserController {
                         .build());
     }
 
+    @Operation(summary = "Info", description = "show token owner info")
     @GetMapping("/info")
     public ResponseEntity<ApiResponse<UserResponse>> getMyUsers() {
         ApiResponse<UserResponse> apiResponse = new ApiResponse<>();
